@@ -9,74 +9,97 @@ import smtplib
 import requests
 from googlesearch import search
 
+# Initialize the speech engine
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-#print(voices[0].id)
-voice = engine.setProperty('voice',voices[0].id)
-
-def calculator(num1, num2, operator):
-    if operator == '+':
-        result = num1 + num2
-    elif operator == '-':
-        result = num1 - num2
-    elif operator == '*':
-        result = num1 * num2
-    elif operator == '/':
-        result = num1 / num2
-    else:
-        return "Invalid operator"
-    
-    return result
-
-def sendEmail(to, contant):
-    pass
+engine.setProperty('voice', voices[0].id)
 
 def speak(audio):
+    """Text-to-speech output"""
     engine.say(audio)
     engine.runAndWait()
-    
-def wishMe():
 
-    hours = int(datetime.datetime.now().hour)
-    if hours >0 and hours<12:
+def wishMe():
+    """Greets the user based on the current time"""
+    hour = int(datetime.datetime.now().hour)
+    if 0 <= hour < 12:
         speak("Good Morning")
-    elif hours >12 and  hours <18:
+    elif 12 <= hour < 18:
         speak("Good Afternoon")
     else:
         speak("Good Evening")
+    speak('I am Jarvis. How can I assist you, sir?')
 
-    speak('I am Jarvis,How can i help you sir?')
-    
-
-def takeCommand():    
+def takeCommand():
+    """Listens to the user's voice command and converts it to text"""
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Listening.....")
+        print("Listening...")
         r.pause_threshold = 1
         audio = r.listen(source)
 
     try:
-        print("Recognizing")
-        speak("recognizing")
-        query = r.recognize_google(audio,language='en-in')
-        print(f'you said : {query}\n')
-    
-    except Exception as e:
-        #print(e)
-        print("Srrory, Say Again...")
-        speak("Srrory, Say Again...")
-
+        print("Recognizing...")
+        query = r.recognize_google(audio, language='en-in')
+        print(f'You said: {query}\n')
+        return query
+    except sr.UnknownValueError:
+        print("Sorry, I didn't catch that. Please repeat.")
+        speak("Sorry, I didn't catch that. Please repeat.")
         return "None"
-    return query
+    except sr.RequestError:
+        print("Could not request results. Check your network connection.")
+        speak("Could not request results. Check your network connection.")
+        return "None"
+
+def sendEmail(to, content):
+    """Placeholder function to send emails"""
+    # You can implement sending emails using smtplib here
+    try:
+        # Example code to send email using SMTP
+        # server = smtplib.SMTP('smtp.gmail.com', 587)
+        # server.starttls()
+        # server.login('your-email@gmail.com', 'your-password')
+        # server.sendmail('your-email@gmail.com', to, content)
+        # server.close()
+        speak("Email has been sent!")
+    except Exception as e:
+        print("Sorry, email could not be sent.", e)
+        speak("Sorry, I could not send the email.")
+
+def performCalculation():
+    """Takes a mathematical expression as voice input and evaluates it"""
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Speak a mathematical expression:")
+        speak("Speak a mathematical expression:")
+        audio = r.listen(source)
+    
+    try:
+        expression = r.recognize_google(audio)
+        print(f"You said: {expression}")
+        result = eval(expression)  # Use eval safely in limited contexts
+        print(f"Result: {result}")
+        speak(f"The result is {result}")
+    except sr.UnknownValueError:
+        print("Sorry, I didn't understand that.")
+        speak("Sorry, I didn't understand that.")
+    except sr.RequestError:
+        print("Could not process the request.")
+        speak("Could not process the request.")
+    except Exception as e:
+        print("Error in calculation:", e)
+        speak("There was an error. Please try again.")
 
 if __name__ == "__main__":
     wishMe()
     while True:
         query = takeCommand().lower()
+
         if 'wikipedia' in query:
             speak('Searching Wikipedia...')
             query = query.replace("wikipedia", "")
-            results = wikipedia.summary(query, sentences=2) 
+            results = wikipedia.summary(query, sentences=2)
             speak("According to Wikipedia")
             print(results)
             speak(results)
@@ -89,84 +112,48 @@ if __name__ == "__main__":
 
         elif 'open stackoverflow' in query:
             webbrowser.open("stackoverflow.com")
+
         elif 'play music' in query:
-            l1 =[0,1]
-            ran = random.choice(l1)
-            print(ran)
-            music = 'C:\\Users\\PRINCE\\OneDrive\\Desktop\\project\\music_a'
-            song = os.listdir(music)
-            print(song)
-            os.startfile(os.path.join(music,song[ran]))
-        
+            music_dir = 'C:\\Users\\PRINCE\\OneDrive\\Desktop\\project\\music_a'
+            songs = os.listdir(music_dir)
+            random_song = random.choice(songs)
+            print(f"Playing: {random_song}")
+            os.startfile(os.path.join(music_dir, random_song))
+
         elif 'the time' in query:
-            time =  datetime.datetime.now().strftime("%H:%M:%S")
-            print(time)
-            speak(f"sir the time is {time}")
-            
+            current_time = datetime.datetime.now().strftime("%H:%M:%S")
+            print(f"Current time: {current_time}")
+            speak(f"Sir, the time is {current_time}")
+
         elif 'open code' in query:
-            codePath = "C:\\Users\\PRINCE\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
-            os.startfile(codePath)
+            code_path = "C:\\Users\\PRINCE\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
+            os.startfile(code_path)
 
         elif 'email to' in query:
             try:
-                speak("What you want to said?")
-                to = 'ravalprince50@gmail.com'
-                contant =  takeCommand()
-                print(contant)
-                sendEmail(to,contant)
-                speak("Email has been sent!")
+                speak("What should I say?")
+                content = takeCommand()
+                to = 'ravalprince50@gmail.com'  # Receiver email address
+                sendEmail(to, content)
             except Exception as e:
-                print("Sorry Please Email is Not Sent")
-                speak("Sorry Please Email is Not Sent")
+                print("Sorry, I could not send the email.", e)
+                speak("Sorry, I could not send the email.")
 
         elif 'exit' in query:
+            speak("Goodbye, sir!")
             exit()
-        
-        # elif 'what'or 'who'in query:
-        #     speak('Searching on Google.....')
-        #     query = query.replace('google','')
-        #     for url in query.range(0,2):
-        #         print(url)
-            
+
         elif 'thank you' in query:
-            print('welcome sir')
-            speak('welcome sir')
+            speak("You're welcome, sir!")
 
         elif 'ok jarvis' in query:
-            print('yes sir')
-            speak('yes sir')
+            speak("Yes, sir!")
 
-        elif 'calculate' or 'calculator' in query:
-            r = sr.Recognizer()
-            with sr.Microphone() as source:
-                print("Speak a mathematical expression:")
-                audio = r.listen(source)
-            try:
-                # Recognize speech using Google Speech Recognition
-                expression = r.recognize_google(audio)
-                print("You said:", expression)
+        elif 'calculate' in query or 'calculator' in query:
+            performCalculation()
 
-                # Evaluate the expression
-                result = eval(expression)
-                print("Result:", result)
-                speak('Answer'+str(result))
-
-            except sr.UnknownValueError:
-                print("Speech recognition could not understand audio")
-                speak("Speech recognition could not understand audio")
-            except sr.RequestError as e:
-                print("Could not request results from Google Speech Recognition service:", e)
-                speak("Could not request results from Google Speech Recognition service:", e)
-            except Exception as e:
-                print("Error:", e)
-                speak("Invailid expression try again")
-            
         elif 'how are you jarvis' in query:
-            print("i am nice")
-            speak("i am nice")
+            speak("I'm doing well, sir. Thank you for asking.")
 
         elif 'hello' in query:
-            print("hello sir")
-            speak("hello sir")
-
-
+            speak("Hello, sir!")
